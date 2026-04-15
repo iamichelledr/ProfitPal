@@ -94,32 +94,6 @@ export default function Signup() {
   }
 };
 
-    setIsLoading(true);
-
-    try {
-      const createdUser = await signup(
-        cleanEmail,
-        cleanPassword,
-        cleanFullName,
-        accountType
-      );
-
-      if (createdUser) {
-        if (accountType === 'premium') {
-          navigate('/pricing');
-        } else {
-          navigate('/dashboard/free');
-        }
-      } else {
-        setError('Failed to create account. Please try again.');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen pt-20 pb-20 bg-gradient-soft">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
