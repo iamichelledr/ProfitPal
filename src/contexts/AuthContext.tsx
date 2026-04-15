@@ -4,16 +4,13 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  User,
 } from "firebase/auth";
-
 import {
   doc,
   getDoc,
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-
 import { auth, db } from "../lib/firebase";
 
 interface AppUser {
@@ -27,8 +24,15 @@ interface AppUser {
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
+  isLoading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AppUser | null>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    name: string,
+    selectedPlan?: "free" | "premium"
+  ) => Promise<AppUser | null>;
   logout: () => Promise<void>;
 }
 
@@ -40,58 +44,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔁 Listen to auth changes
+  const getUserDoc = async (uid: string) => {
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) return null;
+
+    return {
+      uid,
+      ...snap.data(),
+    } as AppUser;
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
+      try {
+        if (!firebaseUser) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const userData = await getUserDoc(firebaseUser.uid);
+        setUser(userData);
+      } catch (error) {
+        console.error("Error loading auth user:", error);
         setUser(null);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const userRef = doc(db, "users", firebaseUser.uid);
-      const snap = await getDoc(userRef);
-
-      if (snap.exists()) {
-        setUser({ uid: firebaseUser.uid, ...snap.data() } as AppUser);
-      }
-
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 🔐 LOGIN
   const login = async (email: string, password: string) => {
     const res = await signInWithEmailAndPassword(auth, email, password);
-    const userRef = doc(db, "users", res.user.uid);
-    const snap = await getDoc(userRef);
-
-    if (snap.exists()) {
-      const userData = { uid: res.user.uid, ...snap.data() } as AppUser;
-      setUser(userData);
-      return userData;
-    }
-
-    return null;
+    const userData = await getUserDoc(res.user.uid);
+    setUser(userData);
+    return userData;
   };
 
-  // 📝 SIGNUP
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string,
+    selectedPlan: "free" | "premium" = "free"
+  ) => {
     const res = await createUserWithEmailAndPassword(auth, email, password);
 
-    await setDoc(doc(db, "users", res.user.uid), {
+    const userPayload: Omit<AppUser, "uid"> & {
+      createdAt: unknown;
+      updatedAt: unknown;
+    } = {
       email,
       name,
       type: "free",
-      isPremiumVerified: null,
+      isPremiumVerified: selectedPlan === "premium" ? false : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    await setDoc(doc(db, "users", res.user.uid), userPayload);
+
+    const userData: AppUser = {
+      uid: res.user.uid,
+      email,
+      name,
+      type: "free",
+      isPremiumVerified: selectedPlan === "premium" ? false : null,
+    };
+
+    setUser(userData);
+    return userData;
   };
 
-  // 🚪 LOGOUT
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -102,6 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        isLoading: loading,
+        isAuthenticated: !!user,
         login,
         signup,
         logout,
