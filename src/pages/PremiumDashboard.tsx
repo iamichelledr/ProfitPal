@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
-import { 
-  Calculator, 
-  TrendingUp, 
-  Crown, 
+import { Link, Navigate } from 'react-router-dom';
+import {
+  Calculator,
+  TrendingUp,
+  Crown,
   ArrowRight,
   Sparkles,
   History,
@@ -13,42 +13,97 @@ import {
   HelpCircle,
   Download,
   TrendingDown,
-  Calendar,
   Package,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 
+type SavedProduct = {
+  id: string;
+  name: string;
+  category: string;
+  cost: string;
+  srp: string;
+  margin: string;
+};
+
+type HistoryItem = {
+  id: string;
+  name: string;
+  date: string;
+  srp: string;
+  profit: string;
+};
+
 export default function PremiumDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 pb-20 bg-gradient-soft flex items-center justify-center">
+        <p className="text-pp-slate">Loading premium dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.type !== 'premium' || user.isPremiumVerified !== true) {
+    return <Navigate to="/pricing" replace />;
+  }
+
+  const savedProducts: SavedProduct[] = [];
+  const recentHistory: HistoryItem[] = [];
+
+  const totalCalculations = recentHistory.length;
+  const totalSavedProducts = savedProducts.length;
+  const avgProfitMargin = 0;
+  const totalProfitTracked = 0;
 
   const quickStats = [
-    { label: 'Total Calculations', value: '156', icon: Calculator, color: 'pp-blue', change: '+12 this week' },
-    { label: 'Saved Products', value: '24', icon: Save, color: 'pp-violet', change: '+3 new' },
-    { label: 'Avg. Profit Margin', value: '38%', icon: TrendingUp, color: 'pp-green', change: '+5%' },
-    { label: 'Total Profit Tracked', value: '₱45,230', icon: BarChart3, color: 'amber-500', change: 'This month' },
-  ];
-
-  const savedProducts = [
-    { name: 'Chocolate Chip Cookies', category: 'Baked Goods', cost: '₱50.00', srp: '₱75.00', margin: '50%' },
-    { name: 'Brownies (12 pcs)', category: 'Baked Goods', cost: '₱120.00', srp: '₱180.00', margin: '50%' },
-    { name: 'Cupcakes (6 pcs)', category: 'Baked Goods', cost: '₱80.00', srp: '₱120.00', margin: '50%' },
-    { name: 'Custom Cake 8"', category: 'Cakes', cost: '₱450.00', srp: '₱750.00', margin: '67%' },
-  ];
-
-  const recentHistory = [
-    { name: 'Chocolate Chip Cookies', date: 'Today, 2:30 PM', srp: '₱75.00', profit: '₱25.00' },
-    { name: 'Brownies (12 pcs)', date: 'Today, 10:15 AM', srp: '₱180.00', profit: '₱60.00' },
-    { name: 'Cupcakes (6 pcs)', date: 'Yesterday, 4:45 PM', srp: '₱120.00', profit: '₱40.00' },
-    { name: 'Custom Cake 8"', date: 'Yesterday, 11:20 AM', srp: '₱750.00', profit: '₱300.00' },
+    {
+      label: 'Total Calculations',
+      value: totalCalculations.toString(),
+      icon: Calculator,
+      bgClass: 'bg-pp-blue/10',
+      textClass: 'text-pp-blue',
+      change: 'No history yet',
+    },
+    {
+      label: 'Saved Products',
+      value: totalSavedProducts.toString(),
+      icon: Save,
+      bgClass: 'bg-pp-violet/10',
+      textClass: 'text-pp-violet',
+      change: 'No saved products yet',
+    },
+    {
+      label: 'Avg. Profit Margin',
+      value: `${avgProfitMargin}%`,
+      icon: TrendingUp,
+      bgClass: 'bg-pp-green/10',
+      textClass: 'text-pp-green',
+      change: 'No data yet',
+    },
+    {
+      label: 'Total Profit Tracked',
+      value: `₱${totalProfitTracked}`,
+      icon: BarChart3,
+      bgClass: 'bg-amber-500/10',
+      textClass: 'text-amber-500',
+      change: 'No data yet',
+    },
   ];
 
   return (
     <div className="min-h-screen pt-20 pb-20 bg-gradient-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -68,6 +123,7 @@ export default function PremiumDashboard() {
                 Your Premium dashboard with full access to all features.
               </p>
             </div>
+
             <div className="flex gap-3">
               <Link to="/calculator">
                 <Button className="bg-gradient-brand hover:opacity-90 text-white">
@@ -75,7 +131,8 @@ export default function PremiumDashboard() {
                   New Calculation
                 </Button>
               </Link>
-              <Button variant="outline">
+
+              <Button variant="outline" disabled>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -83,28 +140,25 @@ export default function PremiumDashboard() {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {quickStats.map((stat, index) => (
             <Card key={index} className="shadow-soft">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`w-10 h-10 rounded-lg bg-${stat.color}/10 flex items-center justify-center`}>
-                    <stat.icon className={`w-5 h-5 text-${stat.color}`} />
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.bgClass}`}>
+                    <stat.icon className={`w-5 h-5 ${stat.textClass}`} />
                   </div>
                 </div>
                 <p className="text-sm text-pp-slate mb-1">{stat.label}</p>
                 <p className="text-2xl font-bold text-pp-dark">{stat.value}</p>
-                <p className="text-xs text-pp-green mt-1">{stat.change}</p>
+                <p className="text-xs text-pp-slate mt-1">{stat.change}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Saved Products */}
             <Card className="shadow-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -116,50 +170,79 @@ export default function PremiumDashboard() {
                     Your product library with pricing details
                   </CardDescription>
                 </div>
-                <Link to="/calculator">
-                  <Button variant="ghost" size="sm" className="text-pp-blue">
-                    View All
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
+
+                {savedProducts.length > 0 && (
+                  <Link to="/calculator">
+                    <Button variant="ghost" size="sm" className="text-pp-blue">
+                      View All
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                )}
               </CardHeader>
+
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-pp-slate/10">
-                        <th className="text-left py-3 px-2 text-sm font-medium text-pp-slate">Product</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium text-pp-slate">Category</th>
-                        <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">Cost</th>
-                        <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">SRP</th>
-                        <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">Margin</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {savedProducts.map((product, index) => (
-                        <tr key={index} className="border-b border-pp-slate/10 hover:bg-pp-blue/5 transition-colors">
-                          <td className="py-3 px-2">
-                            <p className="font-medium text-pp-dark">{product.name}</p>
-                          </td>
-                          <td className="py-3 px-2">
-                            <span className="px-2 py-1 rounded-full bg-pp-blue/10 text-pp-blue text-xs">
-                              {product.category}
-                            </span>
-                          </td>
-                          <td className="py-3 px-2 text-right text-pp-slate">{product.cost}</td>
-                          <td className="py-3 px-2 text-right font-medium text-pp-blue">{product.srp}</td>
-                          <td className="py-3 px-2 text-right">
-                            <span className="text-pp-green font-medium">{product.margin}</span>
-                          </td>
+                {savedProducts.length === 0 ? (
+                  <div className="rounded-xl bg-pp-light p-6 text-center">
+                    <Save className="w-10 h-10 text-pp-violet mx-auto mb-3" />
+                    <p className="font-medium text-pp-dark mb-1">No saved products yet</p>
+                    <p className="text-sm text-pp-slate mb-4">
+                      Your saved product pricing records will appear here once this feature is used.
+                    </p>
+                    <Link to="/calculator">
+                      <Button variant="outline">Go to Calculator</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-pp-slate/10">
+                          <th className="text-left py-3 px-2 text-sm font-medium text-pp-slate">
+                            Product
+                          </th>
+                          <th className="text-left py-3 px-2 text-sm font-medium text-pp-slate">
+                            Category
+                          </th>
+                          <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">
+                            Cost
+                          </th>
+                          <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">
+                            SRP
+                          </th>
+                          <th className="text-right py-3 px-2 text-sm font-medium text-pp-slate">
+                            Margin
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {savedProducts.map((product) => (
+                          <tr
+                            key={product.id}
+                            className="border-b border-pp-slate/10 hover:bg-pp-blue/5 transition-colors"
+                          >
+                            <td className="py-3 px-2">
+                              <p className="font-medium text-pp-dark">{product.name}</p>
+                            </td>
+                            <td className="py-3 px-2">
+                              <span className="px-2 py-1 rounded-full bg-pp-blue/10 text-pp-blue text-xs">
+                                {product.category}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-right text-pp-slate">{product.cost}</td>
+                            <td className="py-3 px-2 text-right font-medium text-pp-blue">{product.srp}</td>
+                            <td className="py-3 px-2 text-right">
+                              <span className="text-pp-green font-medium">{product.margin}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Pricing History */}
             <Card className="shadow-card">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -171,41 +254,54 @@ export default function PremiumDashboard() {
                     Your complete calculation history
                   </CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" className="text-pp-blue">
-                  <Download className="w-4 h-4 mr-1" />
-                  Export
-                </Button>
+
+                {recentHistory.length > 0 && (
+                  <Button variant="ghost" size="sm" className="text-pp-blue">
+                    <Download className="w-4 h-4 mr-1" />
+                    Export
+                  </Button>
+                )}
               </CardHeader>
+
               <CardContent>
-                <div className="space-y-3">
-                  {recentHistory.map((item, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-xl bg-pp-light hover:bg-pp-blue/5 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-pp-blue/10 flex items-center justify-center">
-                          <Calculator className="w-5 h-5 text-pp-blue" />
+                {recentHistory.length === 0 ? (
+                  <div className="rounded-xl bg-pp-light p-6 text-center">
+                    <History className="w-10 h-10 text-pp-blue mx-auto mb-3" />
+                    <p className="font-medium text-pp-dark mb-1">No pricing history yet</p>
+                    <p className="text-sm text-pp-slate mb-4">
+                      Your completed pricing calculations will appear here once history is connected.
+                    </p>
+                    <Link to="/calculator">
+                      <Button variant="outline">Create First Calculation</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-pp-light hover:bg-pp-blue/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-pp-blue/10 flex items-center justify-center">
+                            <Calculator className="w-5 h-5 text-pp-blue" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-pp-dark">{item.name}</p>
+                            <p className="text-sm text-pp-slate">{item.date}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-pp-dark">{item.name}</p>
-                          <p className="text-sm text-pp-slate flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {item.date}
-                          </p>
+                        <div className="text-right">
+                          <p className="font-semibold text-pp-blue">{item.srp}</p>
+                          <p className="text-sm text-pp-green">+{item.profit}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-pp-blue">{item.srp}</p>
-                        <p className="text-sm text-pp-green">+{item.profit}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Batch Costing Tools */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -223,18 +319,23 @@ export default function PremiumDashboard() {
                       <BarChart3 className="w-5 h-5 text-pp-blue" />
                     </div>
                     <h4 className="font-medium text-pp-dark mb-1">Production Analysis</h4>
-                    <p className="text-sm text-pp-slate mb-3">Analyze costs across multiple batches</p>
-                    <Button variant="ghost" size="sm" className="text-pp-blue">
+                    <p className="text-sm text-pp-slate mb-3">
+                      Analyze costs across multiple batches
+                    </p>
+                    <Button variant="ghost" size="sm" className="text-pp-blue" disabled>
                       Open Tool <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
+
                   <div className="p-4 rounded-xl bg-pp-violet/5 border border-pp-violet/10">
                     <div className="w-10 h-10 rounded-lg bg-pp-violet/10 flex items-center justify-center mb-3">
                       <TrendingDown className="w-5 h-5 text-pp-violet" />
                     </div>
                     <h4 className="font-medium text-pp-dark mb-1">Price Optimization</h4>
-                    <p className="text-sm text-pp-slate mb-3">Find the optimal price for maximum profit</p>
-                    <Button variant="ghost" size="sm" className="text-pp-violet">
+                    <p className="text-sm text-pp-slate mb-3">
+                      Find the optimal price for maximum profit
+                    </p>
+                    <Button variant="ghost" size="sm" className="text-pp-violet" disabled>
                       Open Tool <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
@@ -243,9 +344,7 @@ export default function PremiumDashboard() {
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-8">
-            {/* Premium Badge */}
             <Card className="shadow-card bg-gradient-to-br from-pp-violet/10 to-pp-blue/10 border-pp-violet/20">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 rounded-full bg-gradient-brand flex items-center justify-center mx-auto mb-4">
@@ -264,38 +363,64 @@ export default function PremiumDashboard() {
               </CardContent>
             </Card>
 
-            {/* Quick Links */}
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="text-lg">Quick Links</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Link to="/calculator" className="flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+                  <Link
+                    to="/calculator"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors"
+                  >
                     <Calculator className="w-5 h-5 text-pp-blue" />
                     <span className="text-pp-dark">Calculator</span>
                   </Link>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <Save className="w-5 h-5 text-pp-violet" />
                     <span className="text-pp-dark">Saved Products</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <History className="w-5 h-5 text-pp-green" />
                     <span className="text-pp-dark">Full History</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <BarChart3 className="w-5 h-5 text-pp-slate" />
                     <span className="text-pp-dark">Analytics</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <User className="w-5 h-5 text-pp-slate" />
                     <span className="text-pp-dark">Profile</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <Settings className="w-5 h-5 text-pp-slate" />
                     <span className="text-pp-dark">Settings</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
+
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 p-3 rounded-lg opacity-60 cursor-not-allowed"
+                  >
                     <HelpCircle className="w-5 h-5 text-pp-slate" />
                     <span className="text-pp-dark">Help & Support</span>
                   </button>
@@ -303,7 +428,6 @@ export default function PremiumDashboard() {
               </CardContent>
             </Card>
 
-            {/* Usage Stats */}
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="text-lg">Usage This Month</CardTitle>
@@ -313,28 +437,30 @@ export default function PremiumDashboard() {
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Calculations</span>
-                      <span className="text-pp-dark">156 / Unlimited</span>
+                      <span className="text-pp-dark">0 / Unlimited</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-1/4 rounded-full bg-pp-blue" />
+                      <div className="h-full w-0 rounded-full bg-pp-blue" />
                     </div>
                   </div>
+
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Saved Products</span>
-                      <span className="text-pp-dark">24 / Unlimited</span>
+                      <span className="text-pp-dark">0 / Unlimited</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-1/5 rounded-full bg-pp-violet" />
+                      <div className="h-full w-0 rounded-full bg-pp-violet" />
                     </div>
                   </div>
+
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Storage</span>
-                      <span className="text-pp-dark">45 MB / 1 GB</span>
+                      <span className="text-pp-dark">0 MB / 1 GB</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-[5%] rounded-full bg-pp-green" />
+                      <div className="h-full w-0 rounded-full bg-pp-green" />
                     </div>
                   </div>
                 </div>
