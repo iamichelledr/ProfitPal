@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import {
   Calculator,
@@ -25,6 +26,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUserCalculations } from '@/lib/calculations';
 
 type SavedProduct = {
   id: string;
@@ -35,16 +37,129 @@ type SavedProduct = {
   margin: string;
 };
 
-type HistoryItem = {
+type CalculationHistoryItem = {
   id: string;
-  name: string;
-  date: string;
-  srp: string;
-  profit: string;
+  productName: string;
+  category: string;
+  totalCost: number;
+  suggestedPrice: number;
+  profitAmount: number;
+  profitMargin: number;
+  createdAt?: {
+    toDate?: () => Date;
+  };
 };
 
 export default function PremiumDashboard() {
   const { user, loading } = useAuth();
+
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [recentHistory, setRecentHistory] = useState<CalculationHistoryItem[]>([]);
+  const [savedProducts, setSavedProducts] = useState<SavedProduct[]>([]);
+
+  useEffect(() => {
+    const loadCalculations = async () => {
+      if (!user?.uid) {
+        setRecentHistory([]);
+        setSavedProducts([]);
+        setHistoryLoading(false);
+        return;
+      }
+
+      try {
+        setHistoryLoading(true);
+
+        const records = (await getUserCalculations(user.uid)) as CalculationHistoryItem[];
+
+        setRecentHistory(records);
+
+        const uniqueProductsMap = new Map<string, SavedProduct>();
+
+        records.forEach((item) => {
+          const key = item.productName?.trim().toLowerCase() || item.id;
+
+          if (!uniqueProductsMap.has(key)) {
+            uniqueProductsMap.set(key, {
+              id: item.id,
+              name: item.productName || 'Untitled Product',
+              category: item.category || 'General',
+              cost: formatCurrency(Number(item.totalCost || 0)),
+              srp: formatCurrency(Number(item.suggestedPrice || 0)),
+              margin: `${Math.round(Number(item.profitMargin || 0))}%`,
+            });
+          }
+        });
+
+        setSavedProducts(Array.from(uniqueProductsMap.values()));
+      } catch (error) {
+        console.error('Failed to load calculations:', error);
+        setRecentHistory([]);
+        setSavedProducts([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    loadCalculations();
+  }, [user?.uid]);
+
+  const totalCalculations = recentHistory.length;
+  const totalSavedProducts = savedProducts.length;
+
+  const avgProfitMargin = useMemo(() => {
+    if (recentHistory.length === 0) return 0;
+
+    const total = recentHistory.reduce(
+      (sum, item) => sum + Number(item.profitMargin || 0),
+      0
+    );
+
+    return Math.round(total / recentHistory.length);
+  }, [recentHistory]);
+
+  const totalProfitTracked = useMemo(() => {
+    if (recentHistory.length === 0) return 0;
+
+    return recentHistory.reduce(
+      (sum, item) => sum + Number(item.profitAmount || 0),
+      0
+    );
+  }, [recentHistory]);
+
+  const quickStats = [
+    {
+      label: 'Total Calculations',
+      value: totalCalculations.toString(),
+      icon: Calculator,
+      bgClass: 'bg-pp-blue/10',
+      textClass: 'text-pp-blue',
+      change: totalCalculations > 0 ? 'Based on saved history' : 'No history yet',
+    },
+    {
+      label: 'Saved Products',
+      value: totalSavedProducts.toString(),
+      icon: Save,
+      bgClass: 'bg-pp-violet/10',
+      textClass: 'text-pp-violet',
+      change: totalSavedProducts > 0 ? 'Unique saved products' : 'No saved products yet',
+    },
+    {
+      label: 'Avg. Profit Margin',
+      value: `${avgProfitMargin}%`,
+      icon: TrendingUp,
+      bgClass: 'bg-pp-green/10',
+      textClass: 'text-pp-green',
+      change: recentHistory.length > 0 ? 'From saved calculations' : 'No data yet',
+    },
+    {
+      label: 'Total Profit Tracked',
+      value: formatCurrency(totalProfitTracked),
+      icon: BarChart3,
+      bgClass: 'bg-amber-500/10',
+      textClass: 'text-amber-500',
+      change: recentHistory.length > 0 ? 'Accumulated saved profit' : 'No data yet',
+    },
+  ];
 
   if (loading) {
     return (
@@ -57,49 +172,6 @@ export default function PremiumDashboard() {
   if (!user || user.type !== 'premium' || user.isPremiumVerified !== true) {
     return <Navigate to="/pricing" replace />;
   }
-
-  const savedProducts: SavedProduct[] = [];
-  const recentHistory: HistoryItem[] = [];
-
-  const totalCalculations = recentHistory.length;
-  const totalSavedProducts = savedProducts.length;
-  const avgProfitMargin = 0;
-  const totalProfitTracked = 0;
-
-  const quickStats = [
-    {
-      label: 'Total Calculations',
-      value: totalCalculations.toString(),
-      icon: Calculator,
-      bgClass: 'bg-pp-blue/10',
-      textClass: 'text-pp-blue',
-      change: 'No history yet',
-    },
-    {
-      label: 'Saved Products',
-      value: totalSavedProducts.toString(),
-      icon: Save,
-      bgClass: 'bg-pp-violet/10',
-      textClass: 'text-pp-violet',
-      change: 'No saved products yet',
-    },
-    {
-      label: 'Avg. Profit Margin',
-      value: `${avgProfitMargin}%`,
-      icon: TrendingUp,
-      bgClass: 'bg-pp-green/10',
-      textClass: 'text-pp-green',
-      change: 'No data yet',
-    },
-    {
-      label: 'Total Profit Tracked',
-      value: `₱${totalProfitTracked}`,
-      icon: BarChart3,
-      bgClass: 'bg-amber-500/10',
-      textClass: 'text-amber-500',
-      change: 'No data yet',
-    },
-  ];
 
   return (
     <div className="min-h-screen pt-20 pb-20 bg-gradient-soft">
@@ -117,7 +189,7 @@ export default function PremiumDashboard() {
                 </span>
               </div>
               <h1 className="font-heading text-3xl font-bold text-pp-dark">
-                Welcome back, {user?.name || 'Premium User'}!
+                Welcome back, {user.name || 'Premium User'}!
               </h1>
               <p className="text-pp-slate mt-1">
                 Your Premium dashboard with full access to all features.
@@ -132,7 +204,7 @@ export default function PremiumDashboard() {
                 </Button>
               </Link>
 
-              <Button variant="outline" disabled>
+              <Button variant="outline" disabled={recentHistory.length === 0}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -182,12 +254,16 @@ export default function PremiumDashboard() {
               </CardHeader>
 
               <CardContent>
-                {savedProducts.length === 0 ? (
+                {historyLoading ? (
+                  <div className="rounded-xl bg-pp-light p-6 text-center">
+                    <p className="text-pp-slate">Loading saved products...</p>
+                  </div>
+                ) : savedProducts.length === 0 ? (
                   <div className="rounded-xl bg-pp-light p-6 text-center">
                     <Save className="w-10 h-10 text-pp-violet mx-auto mb-3" />
                     <p className="font-medium text-pp-dark mb-1">No saved products yet</p>
                     <p className="text-sm text-pp-slate mb-4">
-                      Your saved product pricing records will appear here once this feature is used.
+                      Your saved product pricing records will appear here after you save calculations.
                     </p>
                     <Link to="/calculator">
                       <Button variant="outline">Go to Calculator</Button>
@@ -256,7 +332,7 @@ export default function PremiumDashboard() {
                 </div>
 
                 {recentHistory.length > 0 && (
-                  <Button variant="ghost" size="sm" className="text-pp-blue">
+                  <Button variant="ghost" size="sm" className="text-pp-blue" disabled>
                     <Download className="w-4 h-4 mr-1" />
                     Export
                   </Button>
@@ -264,12 +340,16 @@ export default function PremiumDashboard() {
               </CardHeader>
 
               <CardContent>
-                {recentHistory.length === 0 ? (
+                {historyLoading ? (
+                  <div className="rounded-xl bg-pp-light p-6 text-center">
+                    <p className="text-pp-slate">Loading pricing history...</p>
+                  </div>
+                ) : recentHistory.length === 0 ? (
                   <div className="rounded-xl bg-pp-light p-6 text-center">
                     <History className="w-10 h-10 text-pp-blue mx-auto mb-3" />
                     <p className="font-medium text-pp-dark mb-1">No pricing history yet</p>
                     <p className="text-sm text-pp-slate mb-4">
-                      Your completed pricing calculations will appear here once history is connected.
+                      Your completed pricing calculations will appear here after saving them.
                     </p>
                     <Link to="/calculator">
                       <Button variant="outline">Create First Calculation</Button>
@@ -277,7 +357,7 @@ export default function PremiumDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {recentHistory.map((item) => (
+                    {recentHistory.slice(0, 5).map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-4 rounded-xl bg-pp-light hover:bg-pp-blue/5 transition-colors"
@@ -287,13 +367,23 @@ export default function PremiumDashboard() {
                             <Calculator className="w-5 h-5 text-pp-blue" />
                           </div>
                           <div>
-                            <p className="font-medium text-pp-dark">{item.name}</p>
-                            <p className="text-sm text-pp-slate">{item.date}</p>
+                            <p className="font-medium text-pp-dark">
+                              {item.productName || 'Untitled Product'}
+                            </p>
+                            <p className="text-sm text-pp-slate">
+                              {item.createdAt?.toDate
+                                ? item.createdAt.toDate().toLocaleString()
+                                : 'Recently saved'}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-pp-blue">{item.srp}</p>
-                          <p className="text-sm text-pp-green">+{item.profit}</p>
+                          <p className="font-semibold text-pp-blue">
+                            {formatCurrency(Number(item.suggestedPrice || 0))}
+                          </p>
+                          <p className="text-sm text-pp-green">
+                            +{formatCurrency(Number(item.profitAmount || 0))}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -437,30 +527,30 @@ export default function PremiumDashboard() {
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Calculations</span>
-                      <span className="text-pp-dark">0 / Unlimited</span>
+                      <span className="text-pp-dark">{totalCalculations} / Unlimited</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-0 rounded-full bg-pp-blue" />
+                      <div className="h-full rounded-full bg-pp-blue" style={{ width: totalCalculations > 0 ? '25%' : '0%' }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Saved Products</span>
-                      <span className="text-pp-dark">0 / Unlimited</span>
+                      <span className="text-pp-dark">{totalSavedProducts} / Unlimited</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-0 rounded-full bg-pp-violet" />
+                      <div className="h-full rounded-full bg-pp-violet" style={{ width: totalSavedProducts > 0 ? '20%' : '0%' }} />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-pp-slate">Storage</span>
-                      <span className="text-pp-dark">0 MB / 1 GB</span>
+                      <span className="text-pp-dark">{totalCalculations > 0 ? '1 MB' : '0 MB'} / 1 GB</span>
                     </div>
                     <div className="h-2 rounded-full bg-pp-slate/10 overflow-hidden">
-                      <div className="h-full w-0 rounded-full bg-pp-green" />
+                      <div className="h-full rounded-full bg-pp-green" style={{ width: totalCalculations > 0 ? '1%' : '0%' }} />
                     </div>
                   </div>
                 </div>
@@ -471,4 +561,12 @@ export default function PremiumDashboard() {
       </div>
     </div>
   );
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+  }).format(value);
 }
