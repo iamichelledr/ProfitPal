@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
+import { db } from '../lib/firebase';
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected';
 
