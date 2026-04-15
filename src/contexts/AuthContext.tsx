@@ -1,157 +1,113 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
   onAuthStateChanged,
-  updateProfile,
-  type User as FirebaseUser,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  User,
+} from "firebase/auth";
 
-type UserType = 'free' | 'premium' | 'admin' | null;
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-interface User {
-  id: string;
-  name: string;
+import { auth, db } from "../lib/firebase";
+
+interface AppUser {
+  uid: string;
   email: string;
-  type: UserType;
+  name: string;
+  type: "free" | "premium" | "admin";
+  isPremiumVerified: boolean | null;
 }
 
 interface AuthContextType {
-  user: User | null;
-  firebaseUser: FirebaseUser | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string, type: 'free' | 'premium') => Promise<boolean>;
+  user: AppUser | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<AppUser | null>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  isAuthenticated: boolean;
-  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+
+export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Listen to auth state changes
+  // 🔁 Listen to auth changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setFirebaseUser(firebaseUser);
-      
-      if (firebaseUser) {
-        // Get user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            id: firebaseUser.uid,
-            name: userData.name || firebaseUser.displayName || '',
-            email: firebaseUser.email || '',
-            type: userData.type || 'free',
-          });
-        } else {
-          setUser({
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || '',
-            email: firebaseUser.email || '',
-            type: 'free',
-          });
-        }
-      } else {
+      if (!firebaseUser) {
         setUser(null);
+        setLoading(false);
+        return;
       }
-      
-      setIsLoading(false);
+
+      const userRef = doc(db, "users", firebaseUser.uid);
+      const snap = await getDoc(userRef);
+
+      if (snap.exists()) {
+        setUser({ uid: firebaseUser.uid, ...snap.data() } as AppUser);
+      }
+
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+  // 🔐 LOGIN
+  const login = async (email: string, password: string) => {
+    const res = await signInWithEmailAndPassword(auth, email, password);
+    const userRef = doc(db, "users", res.user.uid);
+    const snap = await getDoc(userRef);
+
+    if (snap.exists()) {
+      const userData = { uid: res.user.uid, ...snap.data() } as AppUser;
+      setUser(userData);
+      return userData;
     }
-  }, []);
 
-  const signup = useCallback(async (
-    name: string, 
-    email: string, 
-    password: string, 
-    type: 'free' | 'premium'
-  ): Promise<boolean> => {
-    try {
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = userCredential.user;
+    return null;
+  };
 
-      // Update profile with name
-      await updateProfile(newUser, { displayName: name });
+  // 📝 SIGNUP
+  const signup = async (email: string, password: string, name: string) => {
+    const res = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', newUser.uid), {
-        name,
-        email,
-        type,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isPremiumVerified: type === 'premium' ? false : null,
-      });
+    await setDoc(doc(db, "users", res.user.uid), {
+      email,
+      name,
+      type: "free",
+      isPremiumVerified: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  };
 
-      // If premium, create payment verification request
-      if (type === 'premium') {
-        await setDoc(doc(db, 'paymentRequests', newUser.uid), {
-          userId: newUser.uid,
-          name,
-          email,
-          status: 'pending',
-          submittedAt: serverTimestamp(),
-          amount: '₱149',
-          paymentMethod: null,
-          receiptId: null,
-        });
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Signup error:', error);
-      return false;
-    }
-  }, []);
-
-  const logout = useCallback(async (): Promise<void> => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  }, []);
+  // 🚪 LOGOUT
+  const logout = async () => {
+    await signOut(auth);
+    setUser(null);
+  };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      firebaseUser,
-      login,
-      signup,
-      logout,
-      isAuthenticated: !!user,
-      isLoading,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }
