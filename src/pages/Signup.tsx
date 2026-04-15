@@ -40,35 +40,59 @@ export default function Signup() {
   const { signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    const cleanFullName = fullName.trim();
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPassword = password.trim();
-    const cleanConfirmPassword = confirmPassword.trim();
+  const cleanFullName = fullName.trim();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanPassword = password.trim();
+  const cleanConfirmPassword = confirmPassword.trim();
 
-    if (!cleanFullName) {
-      setError('Full name is required');
-      return;
+  if (!cleanFullName) {
+    setError('Full name is required');
+    return;
+  }
+
+  if (!cleanEmail) {
+    setError('Email is required');
+    return;
+  }
+
+  if (cleanPassword !== cleanConfirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
+
+  if (cleanPassword.length < 6) {
+    setError('Password must be at least 6 characters');
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const createdUser = await signup(
+      cleanEmail,
+      cleanPassword,
+      cleanFullName,
+      accountType
+    );
+
+    if (createdUser) {
+      if (accountType === 'premium') {
+        navigate('/pricing');
+      } else {
+        navigate('/dashboard/free');
+      }
+    } else {
+      setError('Failed to create account. Please try again.');
     }
-
-    if (!cleanEmail) {
-      setError('Email is required');
-      return;
-    }
-
-    if (cleanPassword !== cleanConfirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (cleanPassword.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    setIsLoading(true);
+  } catch (err: any) {
+    setError(err?.message || 'An error occurred. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
     try {
       // Expected signup order:
@@ -81,11 +105,12 @@ export default function Signup() {
       );
 
       if (success) {
-        if (accountType === 'premium') {
-          navigate('/dashboard/premium');
-        } else {
-          navigate('/dashboard/free');
-        }
+  if (accountType === 'premium') {
+    navigate('/pricing');
+  } else {
+    navigate('/dashboard/free');
+  }
+}
       } else {
         setError('Failed to create account. Please try again.');
       }
