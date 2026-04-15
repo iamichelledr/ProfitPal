@@ -8,7 +8,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/firebase';
+import { auth, db } from '../firebase';
 
 type UserType = 'free' | 'premium' | 'admin' | null;
 
