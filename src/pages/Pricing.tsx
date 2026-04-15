@@ -2,7 +2,6 @@ import { Check, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Pricing() {
-  const [isAnnual, setIsAnnual] = useState(false);
 
   const plans = [
     {
