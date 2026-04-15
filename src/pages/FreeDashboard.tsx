@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { 
-  Calculator, 
-  TrendingUp, 
-  Crown, 
+import {
+  Calculator,
+  TrendingUp,
+  Crown,
   ArrowRight,
   Sparkles,
   History,
@@ -19,247 +19,161 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function FreeDashboard() {
   const { user } = useAuth();
 
+  // ALL ZERO — NO FAKE DATA
   const quickStats = [
-    { label: 'Calculations Today', value: '3', icon: Calculator, color: 'pp-blue' },
+    { label: 'Calculations Today', value: '0', icon: Calculator, color: 'pp-blue' },
     { label: 'Saved Products', value: '0', icon: Save, color: 'pp-slate' },
-    { label: 'Avg. Profit Margin', value: '32%', icon: TrendingUp, color: 'pp-green' },
-  ];
-
-  const recentCalculations = [
-    { name: 'Chocolate Chip Cookies', date: 'Today', srp: '₱75.00', profit: '₱25.00' },
-    { name: 'Brownies (12 pcs)', date: 'Yesterday', srp: '₱180.00', profit: '₱60.00' },
-    { name: 'Cupcakes (6 pcs)', date: '2 days ago', srp: '₱120.00', profit: '₱40.00' },
-  ];
-
-  const premiumFeatures = [
-    { icon: Save, title: 'Save Unlimited Products', description: 'Keep track of all your product recipes' },
-    { icon: History, title: 'Full Pricing History', description: 'Access all your past calculations' },
-    { icon: BarChart3, title: 'Advanced Analytics', description: 'Detailed reports and insights' },
+    { label: 'Avg. Profit Margin', value: '0%', icon: TrendingUp, color: 'pp-green' },
   ];
 
   return (
     <div className="min-h-screen pt-20 pb-20 bg-gradient-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
+
+        {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 rounded-full bg-pp-blue/10 text-pp-blue text-sm font-medium">
-                  Free Plan
-                </span>
-              </div>
-              <h1 className="font-heading text-3xl font-bold text-pp-dark">
+              <span className="px-3 py-1 rounded-full bg-pp-blue/10 text-pp-blue text-sm font-medium">
+                Free Plan
+              </span>
+              <h1 className="font-heading text-3xl font-bold text-pp-dark mt-2">
                 Welcome back, {user?.name || 'User'}!
               </h1>
               <p className="text-pp-slate mt-1">
-                Here&apos;s what&apos;s happening with your pricing today.
+                Start calculating your product pricing.
               </p>
             </div>
-            <div className="flex gap-3">
-              <Link to="/calculator">
-                <Button className="bg-gradient-brand hover:opacity-90 text-white">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  New Calculation
-                </Button>
-              </Link>
-            </div>
+
+            <Link to="/calculator">
+              <Button className="bg-gradient-brand text-white">
+                <Calculator className="w-4 h-4 mr-2" />
+                New Calculation
+              </Button>
+            </Link>
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4 mb-8">
           {quickStats.map((stat, index) => (
-            <Card key={index} className="shadow-soft">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-pp-slate mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold text-pp-dark">{stat.value}</p>
-                  </div>
-                  <div className={`w-12 h-12 rounded-xl bg-${stat.color}/10 flex items-center justify-center`}>
-                    <stat.icon className={`w-6 h-6 text-${stat.color}`} />
-                  </div>
+            <Card key={index}>
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-pp-slate">{stat.label}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
                 </div>
+                <stat.icon className="w-6 h-6 text-pp-slate" />
               </CardContent>
             </Card>
           ))}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+
+          {/* LEFT */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Quick Calculator Access */}
-            <Card className="shadow-card">
+
+            {/* Calculator */}
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-pp-blue" />
-                  Quick Calculator
-                </CardTitle>
+                <CardTitle>Quick Calculator</CardTitle>
                 <CardDescription>
                   Calculate your product pricing in seconds
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="bg-pp-blue/5 rounded-xl p-6 text-center">
-                  <div className="w-16 h-16 rounded-full bg-gradient-brand flex items-center justify-center mx-auto mb-4">
-                    <Calculator className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-pp-dark mb-2">
-                    Ready to Price Your Next Product?
-                  </h3>
-                  <p className="text-pp-slate text-sm mb-4 max-w-md mx-auto">
-                    Enter your costs and get instant pricing recommendations 
-                    with profit breakdown.
-                  </p>
-                  <Link to="/calculator">
-                    <Button className="bg-gradient-brand hover:opacity-90 text-white">
-                      Open Calculator
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Recent Calculations */}
-            <Card className="shadow-card">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-pp-blue" />
-                    Recent Calculations
-                  </CardTitle>
-                  <CardDescription>
-                    Your last 3 calculations (Free limit)
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentCalculations.map((calc, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center justify-between p-4 rounded-xl bg-pp-light hover:bg-pp-blue/5 transition-colors"
-                    >
-                      <div>
-                        <p className="font-medium text-pp-dark">{calc.name}</p>
-                        <p className="text-sm text-pp-slate">{calc.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-pp-blue">{calc.srp}</p>
-                        <p className="text-sm text-pp-green">+{calc.profit} profit</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 p-4 rounded-lg bg-pp-slate/5 text-center">
-                  <p className="text-sm text-pp-slate">
-                    <Sparkles className="w-4 h-4 inline mr-1" />
-                    Upgrade to Premium to save unlimited calculations
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <CardContent className="text-center">
+                <Calculator className="w-12 h-12 mx-auto text-pp-blue mb-3" />
+                <p className="text-pp-slate mb-4">
+                  No saved data in free plan.
+                </p>
 
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Upgrade Banner */}
-            <Card className="shadow-card border-pp-violet/20 bg-gradient-to-br from-pp-violet/5 to-pp-blue/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-pp-violet">
-                  <Crown className="w-5 h-5" />
-                  Upgrade to Premium
-                </CardTitle>
-                <CardDescription>
-                  Unlock the full power of ProfitPal
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 mb-6">
-                  {premiumFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-pp-violet/10 flex items-center justify-center flex-shrink-0">
-                        <feature.icon className="w-4 h-4 text-pp-violet" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-pp-dark text-sm">{feature.title}</p>
-                        <p className="text-xs text-pp-slate">{feature.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Link to="/pricing">
-                  <Button className="w-full bg-gradient-brand hover:opacity-90 text-white">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Upgrade Now - ₱149/mo
+                <Link to="/calculator">
+                  <Button className="bg-gradient-brand text-white">
+                    Open Calculator
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </CardContent>
             </Card>
 
-            {/* Quick Links */}
-            <Card className="shadow-soft">
+            {/* NO HISTORY */}
+            <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Quick Links</CardTitle>
+                <CardTitle>Pricing History</CardTitle>
+                <CardDescription>
+                  Available in Premium only
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Link to="/calculator" className="flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <Calculator className="w-5 h-5 text-pp-blue" />
-                    <span className="text-pp-dark">Calculator</span>
-                  </Link>
-                  <Link to="/features" className="flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <Sparkles className="w-5 h-5 text-pp-violet" />
-                    <span className="text-pp-dark">Features</span>
-                  </Link>
-                  <Link to="/pricing" className="flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <Crown className="w-5 h-5 text-pp-green" />
-                    <span className="text-pp-dark">Pricing</span>
-                  </Link>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <User className="w-5 h-5 text-pp-slate" />
-                    <span className="text-pp-dark">Profile</span>
-                  </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <Settings className="w-5 h-5 text-pp-slate" />
-                    <span className="text-pp-dark">Settings</span>
-                  </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pp-blue/5 transition-colors">
-                    <HelpCircle className="w-5 h-5 text-pp-slate" />
-                    <span className="text-pp-dark">Help & Support</span>
-                  </button>
-                </div>
+
+              <CardContent className="text-center py-10">
+                <History className="w-10 h-10 mx-auto text-pp-slate mb-3" />
+                <p className="font-medium text-pp-dark">
+                  No history available
+                </p>
+                <p className="text-sm text-pp-slate mb-4">
+                  Upgrade to save and view your calculations
+                </p>
               </CardContent>
             </Card>
 
-            {/* Plan Info */}
-            <Card className="shadow-soft">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-pp-slate">Current Plan</span>
-                  <span className="px-2 py-1 rounded-full bg-pp-blue/10 text-pp-blue text-xs font-medium">
-                    Free
-                  </span>
+          </div>
+
+          {/* RIGHT */}
+          <div className="space-y-8">
+
+            {/* UPGRADE */}
+            <Card className="border-pp-violet/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-pp-violet">
+                  <Crown className="w-5 h-5" />
+                  Upgrade to Premium
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent>
+                <div className="space-y-3 mb-6">
+                  <p className="text-sm text-pp-slate">
+                    ✔ Save unlimited products
+                  </p>
+                  <p className="text-sm text-pp-slate">
+                    ✔ Full pricing history
+                  </p>
+                  <p className="text-sm text-pp-slate">
+                    ✔ Advanced analytics
+                  </p>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-pp-slate">Calculations/day</span>
-                    <span className="text-pp-dark">5</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-pp-slate">Saved products</span>
-                    <span className="text-pp-dark">0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-pp-slate">History</span>
-                    <span className="text-pp-dark">3 days</span>
-                  </div>
-                </div>
+
+                <Link to="/pricing">
+                  <Button className="w-full bg-gradient-brand text-white">
+                    Upgrade - ₱149
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
+
+            {/* QUICK LINKS */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Links</CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-2">
+                <Link to="/calculator" className="flex gap-3 p-2">
+                  <Calculator className="w-5 h-5" />
+                  Calculator
+                </Link>
+
+                <Link to="/pricing" className="flex gap-3 p-2">
+                  <Crown className="w-5 h-5" />
+                  Upgrade
+                </Link>
+              </CardContent>
+            </Card>
+
           </div>
+
         </div>
       </div>
     </div>
