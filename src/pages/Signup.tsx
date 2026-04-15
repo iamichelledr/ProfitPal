@@ -40,77 +40,50 @@ export default function Signup() {
   const { signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  const cleanFullName = fullName.trim();
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanPassword = password.trim();
-  const cleanConfirmPassword = confirmPassword.trim();
+    const cleanFullName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanConfirmPassword = confirmPassword.trim();
 
-  if (!cleanFullName) {
-    setError('Full name is required');
-    return;
-  }
-
-  if (!cleanEmail) {
-    setError('Email is required');
-    return;
-  }
-
-  if (cleanPassword !== cleanConfirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  if (cleanPassword.length < 6) {
-    setError('Password must be at least 6 characters');
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    const createdUser = await signup(
-      cleanEmail,
-      cleanPassword,
-      cleanFullName,
-      accountType
-    );
-
-    if (createdUser) {
-      if (accountType === 'premium') {
-        navigate('/pricing');
-      } else {
-        navigate('/dashboard/free');
-      }
-    } else {
-      setError('Failed to create account. Please try again.');
+    if (!cleanFullName) {
+      setError('Full name is required');
+      return;
     }
-  } catch (err: any) {
-    setError(err?.message || 'An error occurred. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+    if (!cleanEmail) {
+      setError('Email is required');
+      return;
+    }
+
+    if (cleanPassword !== cleanConfirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (cleanPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      // Expected signup order:
-      // signup(email, password, fullName, accountType)
-      const success = await signup(
+      const createdUser = await signup(
         cleanEmail,
         cleanPassword,
         cleanFullName,
         accountType
       );
 
-      if (success) {
-  if (accountType === 'premium') {
-    navigate('/pricing');
-  } else {
-    navigate('/dashboard/free');
-  }
-}
+      if (createdUser) {
+        if (accountType === 'premium') {
+          navigate('/pricing');
+        } else {
+          navigate('/dashboard/free');
+        }
       } else {
         setError('Failed to create account. Please try again.');
       }
@@ -298,8 +271,8 @@ export default function Signup() {
                       <p className="font-medium text-pp-violet mb-1">Premium Access</p>
                       <p className="text-pp-slate">
                         Premium access requires payment verification. After signing up,
-                        you will receive instructions to complete your payment.
-                        Your account will be upgraded within 24 hours.
+                        you will be redirected to the payment instructions page to
+                        complete your upgrade request.
                       </p>
                     </div>
                   </div>
