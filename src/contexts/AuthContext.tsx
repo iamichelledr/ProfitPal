@@ -13,12 +13,18 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 
-interface AppUser {
+export interface AppUser {
   uid: string;
   email: string;
   name: string;
   type: "free" | "premium" | "admin";
+  requestedPlan: "free" | "premium";
   isPremiumVerified: boolean | null;
+  paymentStatus: "pending" | "approved" | "rejected" | null;
+  paymentMethod?: string | null;
+  paymentAmount?: number | null;
+  receiptId?: string | null;
+  submittedAt?: any;
 }
 
 interface AuthContextType {
@@ -91,16 +97,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string,
     selectedPlan: "free" | "premium" = "free"
   ) => {
-    const res = await createUserWithEmailAndPassword(auth, email, password);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
 
-    const userPayload: Omit<AppUser, "uid"> & {
-      createdAt: unknown;
-      updatedAt: unknown;
-    } = {
-      email,
-      name,
-      type: "free",
-      isPremiumVerified: selectedPlan === "premium" ? false : null,
+    const res = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+
+    const isPremiumRequest = selectedPlan === "premium";
+
+    const userPayload = {
+      email: cleanEmail,
+      name: cleanName,
+      type: "free" as const,
+      requestedPlan: selectedPlan,
+      isPremiumVerified: isPremiumRequest ? false : null,
+      paymentStatus: isPremiumRequest ? "pending" as const : null,
+      paymentMethod: null,
+      paymentAmount: null,
+      receiptId: null,
+      submittedAt: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -109,10 +123,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const userData: AppUser = {
       uid: res.user.uid,
-      email,
-      name,
+      email: cleanEmail,
+      name: cleanName,
       type: "free",
-      isPremiumVerified: selectedPlan === "premium" ? false : null,
+      requestedPlan: selectedPlan,
+      isPremiumVerified: isPremiumRequest ? false : null,
+      paymentStatus: isPremiumRequest ? "pending" : null,
+      paymentMethod: null,
+      paymentAmount: null,
+      receiptId: null,
+      submittedAt: null,
     };
 
     setUser(userData);
