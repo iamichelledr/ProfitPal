@@ -91,6 +91,11 @@ export default function CalculatorPage() {
       return;
     }
 
+    if (user.type !== 'premium' || user.isPremiumVerified !== true) {
+      alert('Saving calculations is a Premium feature. Please upgrade to Premium to continue.');
+      return;
+    }
+
     if (!result) {
       alert('Please calculate first.');
       return;
@@ -469,14 +474,23 @@ export default function CalculatorPage() {
                     )}
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={handleSave}
-                        className="flex-1 bg-gradient-brand hover:opacity-90 text-white"
-                        disabled={isSaving}
-                      >
-                        {isSaving ? 'Saving...' : 'Save This Calculation'}
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
+                      {user?.type === 'premium' && user?.isPremiumVerified === true ? (
+                        <Button
+                          onClick={handleSave}
+                          className="flex-1 bg-gradient-brand hover:opacity-90 text-white"
+                          disabled={isSaving || !result}
+                        >
+                          {isSaving ? 'Saving...' : 'Save This Calculation'}
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      ) : (
+                        <Link to="/pricing" className="flex-1">
+                          <Button className="w-full bg-gradient-brand hover:opacity-90 text-white">
+                            Upgrade to Save
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        </Link>
+                      )}
 
                       <Link to="/pricing" className="flex-1">
                         <Button variant="outline" className="w-full">
