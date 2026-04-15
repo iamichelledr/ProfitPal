@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { Search, Users, Crown, Clock3, BarChart3, CheckCircle2, XCircle } from "lucide-react";
 import { db } from "../lib/firebase";
-import { AppUser } from "@/contexts/AuthContext";
+import type { AppUser } from "@/contexts/AuthContext";
 
 type DashboardUser = AppUser & {
   createdAt?: any;
