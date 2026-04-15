@@ -68,30 +68,40 @@ export default function AdminDashboard() {
     .reduce((sum, user) => sum + (user.paymentAmount || 149), 0);
 
   const handleApprove = async (userId: string) => {
-    try {
-      await updateDoc(doc(db, "users", userId), {
-        type: "premium",
-        isPremiumVerified: true,
-        paymentStatus: "approved",
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error approving user:", error);
-    }
-  };
+  try {
+    await updateDoc(doc(db, "users", userId), {
+      type: "premium",
+      requestedPlan: "premium",
+      isPremiumVerified: true,
+      paymentStatus: "approved",
+      paymentMethod: "GCash",
+      paymentAmount: 149,
+      receiptId: "Verified via Google Form",
+      submittedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error approving user:", error);
+  }
+};
 
-  const handleReject = async (userId: string) => {
-    try {
-      await updateDoc(doc(db, "users", userId), {
-        type: "free",
-        isPremiumVerified: false,
-        paymentStatus: "rejected",
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error rejecting user:", error);
-    }
-  };
+const handleReject = async (userId: string) => {
+  try {
+    await updateDoc(doc(db, "users", userId), {
+      type: "free",
+      requestedPlan: "premium",
+      isPremiumVerified: false,
+      paymentStatus: "rejected",
+      paymentMethod: "GCash",
+      paymentAmount: 149,
+      receiptId: "Rejected via Google Form review",
+      submittedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error rejecting user:", error);
+  }
+};
 
   const formatDate = (value: any) => {
     if (!value) return "-";
