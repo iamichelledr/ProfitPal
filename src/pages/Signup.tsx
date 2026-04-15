@@ -1,10 +1,27 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Sparkles, Crown, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Sparkles,
+  Crown,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/Logo';
@@ -18,7 +35,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const { signup } = useAuth();
 
@@ -26,12 +43,27 @@ export default function Signup() {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
+    const cleanFullName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const cleanConfirmPassword = confirmPassword.trim();
+
+    if (!cleanFullName) {
+      setError('Full name is required');
+      return;
+    }
+
+    if (!cleanEmail) {
+      setError('Email is required');
+      return;
+    }
+
+    if (cleanPassword !== cleanConfirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (password.length < 6) {
+    if (cleanPassword.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
@@ -39,7 +71,15 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const success = await signup(fullName, email, password, accountType);
+      // Expected signup order:
+      // signup(email, password, fullName, accountType)
+      const success = await signup(
+        cleanEmail,
+        cleanPassword,
+        cleanFullName,
+        accountType
+      );
+
       if (success) {
         if (accountType === 'premium') {
           navigate('/dashboard/premium');
@@ -50,7 +90,7 @@ export default function Signup() {
         setError('Failed to create account. Please try again.');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
+      setError(err?.message || 'An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -58,14 +98,12 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen pt-20 pb-20 bg-gradient-soft">
-      {/* Background Decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-0 w-96 h-96 bg-pp-blue/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-pp-violet/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md mx-auto px-4">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <Logo size="lg" showTagline />
         </div>
@@ -81,7 +119,7 @@ export default function Signup() {
               Join ProfitPal and start pricing with confidence
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
@@ -148,7 +186,11 @@ export default function Signup() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-pp-slate hover:text-pp-dark"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -171,21 +213,22 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* Account Type Selection */}
               <div className="pt-2">
                 <Label className="text-pp-dark font-medium mb-3 block">
                   Choose Your Plan
                 </Label>
-                <RadioGroup 
-                  value={accountType} 
+                <RadioGroup
+                  value={accountType}
                   onValueChange={(value) => setAccountType(value as 'free' | 'premium')}
                   className="space-y-3"
                 >
-                  <div className={`flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    accountType === 'free' 
-                      ? 'border-pp-blue bg-pp-blue/5' 
-                      : 'border-pp-slate/10 hover:border-pp-slate/30'
-                  }`}>
+                  <div
+                    className={`flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      accountType === 'free'
+                        ? 'border-pp-blue bg-pp-blue/5'
+                        : 'border-pp-slate/10 hover:border-pp-slate/30'
+                    }`}
+                  >
                     <RadioGroupItem value="free" id="free" />
                     <Label htmlFor="free" className="flex-1 cursor-pointer">
                       <div className="flex items-center justify-between">
@@ -198,11 +241,13 @@ export default function Signup() {
                     </Label>
                   </div>
 
-                  <div className={`flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    accountType === 'premium' 
-                      ? 'border-pp-violet bg-pp-violet/5' 
-                      : 'border-pp-slate/10 hover:border-pp-slate/30'
-                  }`}>
+                  <div
+                    className={`flex items-center space-x-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      accountType === 'premium'
+                        ? 'border-pp-violet bg-pp-violet/5'
+                        : 'border-pp-slate/10 hover:border-pp-slate/30'
+                    }`}
+                  >
                     <RadioGroupItem value="premium" id="premium" />
                     <Label htmlFor="premium" className="flex-1 cursor-pointer">
                       <div className="flex items-center justify-between">
@@ -220,7 +265,6 @@ export default function Signup() {
                 </RadioGroup>
               </div>
 
-              {/* Premium Note */}
               {accountType === 'premium' && (
                 <div className="p-4 rounded-lg bg-pp-violet/10 text-sm">
                   <div className="flex items-start gap-2">
@@ -228,8 +272,8 @@ export default function Signup() {
                     <div>
                       <p className="font-medium text-pp-violet mb-1">Premium Access</p>
                       <p className="text-pp-slate">
-                        Premium access requires payment verification. After signing up, 
-                        you&apos;ll receive instructions to complete your payment. 
+                        Premium access requires payment verification. After signing up,
+                        you will receive instructions to complete your payment.
                         Your account will be upgraded within 24 hours.
                       </p>
                     </div>
@@ -241,14 +285,18 @@ export default function Signup() {
                 <input type="checkbox" className="rounded border-pp-slate/20" required />
                 <span className="text-pp-slate">
                   I agree to the{' '}
-                  <Link to="#" className="text-pp-blue hover:underline">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="#" className="text-pp-blue hover:underline">Privacy Policy</Link>
+                  <Link to="#" className="text-pp-blue hover:underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="#" className="text-pp-blue hover:underline">
+                    Privacy Policy
+                  </Link>
                 </span>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-gradient-brand hover:opacity-90 text-white"
                 size="lg"
                 disabled={isLoading}
