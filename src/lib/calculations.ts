@@ -2,7 +2,6 @@ import {
   addDoc,
   collection,
   getDocs,
-  orderBy,
   query,
   serverTimestamp,
   Timestamp,
@@ -31,14 +30,31 @@ export async function saveCalculation(data: CalculationRecord) {
 export async function getUserCalculations(userId: string) {
   const q = query(
     collection(db, "calculations"),
-    where("userId", "==", userId),
-    orderBy("createdAt", "desc")
+    where("userId", "==", userId)
   );
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((doc) => ({
+  const records = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
-  }));
+  })) as Array<{
+    id: string;
+    userId: string;
+    productName: string;
+    category: string;
+    totalCost: number;
+    suggestedPrice: number;
+    profitAmount: number;
+    profitMargin: number;
+    createdAt?: { toDate?: () => Date } | null;
+  }>;
+
+  records.sort((a, b) => {
+    const aTime = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+    const bTime = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+    return bTime - aTime;
+  });
+
+  return records;
 }
